@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,9 +21,10 @@ class _HomePageState extends State<HomePage> {
   int count = 0;
   String? operationStore = "";
 
-//------------------------------------
+//---------------------------- --------
   storevalues_and_cal(String data) {
     if (data == "=") {
+      savedata();
       if (operationStore == "+") {
         summation();
         txtvalue = txtvalue.toString();
@@ -250,7 +252,7 @@ class _HomePageState extends State<HomePage> {
         storeData.clear();
       }
     } else {
-      if (storeData.length < 16 && PrevData.length < 33) {
+      if (storeData.length < 13 && PrevData.length < 25) {
         storeData.add(data);
         txtvalue = storeData.join();
         setState(() {
@@ -263,6 +265,19 @@ class _HomePageState extends State<HomePage> {
         });
       }
     }
+  }
+
+  Future<void> savedata() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    int valueCount = 1;
+
+    if (prefs.containsKey("count")) {
+      valueCount = prefs.getInt("count")!;
+      prefs.setInt("count", valueCount + 1);
+    } else {
+      prefs.setInt("count", 1);
+    }
+    prefs.setString("Val_$valueCount", "$PreVCalations = $lastvalue");
   }
 
   summation() {
@@ -347,12 +362,45 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            const SizedBox(height: 8),
+            IconButton(
+                onPressed: () async {
+                  final SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  //prefs.clear();
+                  int count = prefs.getInt("count")!;
+                  List<ListTile> calhistory = [];
+                  for (int i = 1; i < count; i++) {
+                    print(prefs.getString("Val_$i"));
+                    calhistory.add(ListTile(
+                      title: Text(
+                        "${prefs.getString("Val_$i")}",
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                      tileColor: Colors.blueAccent,
+                    ));
+                  }
+
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) => Container(
+                      padding: const EdgeInsets.all(10),
+                      child: ListView(
+                        children: calhistory,
+                      ),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.history,
+                  color: Colors.white,
+                )),
             const SizedBox(
-              height: 120,
+              height: 75,
             ),
             Text(
               PreVCalations,
